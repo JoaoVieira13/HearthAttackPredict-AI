@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Previsão Infarto</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            margin: 20px;
+            padding: 20px;
+            background-image: url('https://www.imediato.pt/wp-content/uploads/2023/11/626af17e37014a34e98e8b02_robo-IA.png');
+            background-size: cover;
+            background-position: center;
+            position: relative; 
+        }
+        h1 {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+        form {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .form-column {
+            width: calc(50% - 20px);
+            margin-bottom: 20px;
+        }
+        .form-column:nth-child(2n + 1) {
+            margin-right: 20px; 
+        }
+        label {
+            font-weight: bold;
+            display: block;
+            margin-bottom: 8px;
+        }
+        select:not(#model) {
+            width: calc(100%);
+            padding: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        input[type="text"] {
+            width: calc(100% - 20px);
+            padding: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        input[type="submit"] {
+            background-color: blue;
+            color: white;
+            padding: 12px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+            margin: 0 auto;
+        }
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+        h2 {
+            text-align: center;
+            margin-top: 40px;
+            color: white;
+        }
+        .error-message {
+            color: red;
+            margin-top: 10px;
+        }
+        .results {
+            text-align: center;
+            margin-top: 20px;
+            color: white;
+        }
+        .metrics {
+            text-align: center;
+            margin-top: 20px;
+            background-color: rgba(255, 255, 255, 0.9); 
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: none;
+            max-width: 600px;
+            margin: 20px auto;
+        }
+        .metric {
+            margin-bottom: 10px;
+            color: #45a049;
+            font-weight: bold;
+        }
+        #model {
+            position: absolute;
+            top: 20px; 
+            right: 20px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Previsão da chance de Ataque Cardíaco</h1>
+    <form id="predictionForm" method="post" action="/predict">
+        <select id="model" name="model" required>
+            <option value="LogisticRegression">Logistic Regression</option>
+            <option value="RandomForest">Random Forest</option>
+            <option value="SVM">Support Vector Machine</option>
+        </select>
+        <div class="form-column">
+            <label for="age">Age:</label>
+            <input type="text" id="age" name="age" placeholder="Inserir idade..." required><br>
+            
+            <label for="cp">cp (Dor no Peito)</label>
+            <select id="cp" name="cp" required>
+                <option value="0">Angina Típica</option>
+                <option value="1">Angina Atípica</option>
+                <option value="2">Dor Não Anginosa</option>
+                <option value="3">Assintomático</option>
+            </select><br>
+            
+            <label for="trtbps">trtbps (Pressão Sanguínea em Repouso):</label>
+            <input type="text" id="trtbps" name="trtbps" placeholder="Inserir valor de pressão sanguínea..." required><br>
+            
+            <label for="chol">chol (Colesterol):</label>
+            <input type="text" id="chol" name="chol" placeholder="Inserir valor de colesterol..." required><br>
+        </div>
+        
+        <div class="form-column">
+            <label for="restecg">restecg (Resultado Eletrocardiograma):</label>
+            <select id="restecg" name="restecg" required>
+                <option value="0">Normal</option>
+                <option value="1">Anomalia</option>
+                <option value="2">Anomalia grave</option>
+            </select><br>
+            
+            <label for="thalachh">thalachh (Frequência Cardíaca Máxima):</label>
+            <input type="text" id="thalachh" name="thalachh" placeholder="Inserir Máximo de Frequência Cardíaca..." required><br>
+            
+            <label for="slp">slp (Inclinação do Segmento ST):</label>
+            <select id="slp" name="slp" required>
+                <option value="0">Inclinação ascendente</option>
+                <option value="1">Plano</option>
+                <option value="2">Inclinação descendente</option>
+            </select><br>
+            <label for="fbs">fbs (Açúcar no Sangue em Jejum):</label>
+            <select id="fbs" name="fbs" required>
+                <option value="0">Não diabético</option>
+                <option value="1">Diabético</option>
+            </select><br>
+        </div>
+        
+        <input type="submit" value="Prever">
+    </form>
+
+    <div id="results" class="results">
+        {% if error %}
+        <p class="error-message">{{ error }}</p>
+        {% endif %}
+
+        {% if probability is not none %}
+        <h2>Probabilidade de Ataque Cardíaco: <span id="probabilityValue">{{ probability }}</span></h2>
+        {% endif %}
+    </div>
+
+    <div id="metrics" class="metrics">
+        <div class="metric"><strong>Accuracy:</strong> <span id="accuracy"></span></div>
+        <div class="metric"><strong>Precision:</strong> <span id="precision"></span></div>
+        <div class="metric"><strong>Recall:</strong> <span id="recall"></span></div>
+        <div class="metric"><strong>F1 Score:</strong> <span id="f1Score"></span></div>
+    </div>
+
+    <script>
+        document.getElementById('predictionForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+    
+            var form = this;
+            var formData = new FormData(form);
+    
+            fetch('/predict', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    document.getElementById('results').innerHTML = '<p class="error-message">' + data.error + '</p>';
+                } else {
+                    document.getElementById('probabilityValue').textContent = data.probability.toFixed(4); 
+                    document.getElementById('metrics').style.display = 'block';
+                    var selectedModel = document.getElementById('model').value;
+                    fetch(`/metrics?model=${selectedModel}`)
+                        .then(response => response.json())
+                        .then(metrics => {
+                            document.getElementById('accuracy').textContent = metrics.accuracy.toFixed(4);
+                            document.getElementById('precision').textContent = metrics.precision.toFixed(4);
+                            document.getElementById('recall').textContent = metrics.recall.toFixed(4);
+                            document.getElementById('f1Score').textContent = metrics.f1_score.toFixed(4);
+                        })
+                        .catch(error => console.error('Erro ao buscar métricas:', error));
+                }
+            })
+            .catch(error => {
+                console.error('Erro ao enviar requisição:', error);
+            });
+        });
+    </script>
+</body>
+</html>
